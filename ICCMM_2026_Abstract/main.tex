@@ -1,0 +1,48 @@
+\documentclass[twoside, 10pt, a4paper]{article}
+\usepackage[paperwidth=170mm, paperheight=235mm]{geometry}
+\addtolength{\voffset}{-30mm}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{titlesec}
+\usepackage{lineno}
+\setlength{\textheight}{205mm}
+\setlength{\textwidth}{130mm}
+\setlength{\headheight}{10mm}
+\setlength{\evensidemargin}{0mm}
+\setlength{\oddsidemargin}{0mm}
+\setlength{\topmargin}{0mm}
+\setlength{\parindent}{9mm}
+\linespread{0.9}
+\setcounter{page}{1}
+
+\titleformat{\section}
+{\normalfont\fontsize{11}{13}\bfseries}{\thesection}{1em}{}
+
+\begin{document}
+\pagestyle{empty}
+\thispagestyle{empty}
+\vspace{44pt}
+\begin{center}
+\begin{flushleft}
+\footnotesize International Conference on Computational and Mathematical Modelling 2026
+\end{flushleft}
+\vspace{10pt}
+\hrule
+\vspace{15pt}
+{ \bf{\large Explainable Deep Learning Framework for Pneumonia Detection and Classification Using Transfer Learning and Grad-CAM}}\\
+\vspace{10pt}
+{\bf \small \underline{G. C. M. Sewwandi}$^{1*}$ and R. W. K. T. Rajapaksha$^{1}$}\\
+$^{1}$ \small Department of Computer and Data Science, Faculty of Computing, NSBM Green University, Homagama, Sri Lanka\\
+\small *Corresponding author; E-mail: gcmsewwandi@students.nsbm.ac.lk\\
+\end{center}
+
+\vspace{12pt}
+
+\indent Pneumonia remains a major cause of respiratory morbidity and mortality, and its timely diagnosis is difficult in settings where radiological expertise is limited. Chest X-ray imaging is the most accessible first-line diagnostic modality, yet the visual manifestations of COVID-19, bacterial pneumonia, viral pneumonia and normal lungs frequently overlap, and most existing deep learning studies address only binary classification with limited interpretability. This study proposes an explainable deep learning framework for four-class chest X-ray classification (Normal, COVID-19, Bacterial Pneumonia and Viral Pneumonia). A curated dataset of 9,209 chest X-ray images from publicly available repositories was partitioned into training, validation and test sets in a 70:15:15 ratio. Three convolutional architectures, DenseNet121, EfficientNetV2B3 and EfficientNetV2S, were fine-tuned using ImageNet-based transfer learning with data augmentation and class-weighted loss to address class imbalance. Gradient-weighted Class Activation Mapping (Grad-CAM) was integrated to highlight the lung regions that influence each prediction, and the framework was deployed as a web-based and mobile-friendly clinical decision support system with prediction history management and automated PDF report generation. On the held-out test set of 1,382 images, DenseNet121 achieved the highest accuracy of 85.31\% (macro F1-score 0.84), followed by EfficientNetV2B3 with 84.30\% and EfficientNetV2S with 80.54\%. Confusion matrix analysis showed that most misclassifications occurred between bacterial and viral pneumonia, reflecting their overlapping radiographic features, while Grad-CAM heatmaps provided visual evidence to support clinical review. The results demonstrate that combining transfer learning with visual explanations yields accurate and transparent multi-class pneumonia classification, and that integrating such models into an end-to-end deployable system offers a practical decision support tool for clinicians, particularly in resource-limited environments.
+
+\section*{Keywords:}
+\small {Clinical Decision Support, COVID-19, Deep Learning, Grad-CAM, Pneumonia Detection}
+
+\end{document}
