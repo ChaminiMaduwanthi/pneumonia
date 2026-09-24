@@ -1,0 +1,31 @@
+{
+  "model": "densenet121",
+  "model_label": "DenseNet121",
+  "class_names": [
+    "COVID",
+    "Normal",
+    "Pneumonia-Bacterial",
+    "Pneumonia-Viral"
+  ],
+  "feature_dim": 256,
+  "policy": "maha",
+  "temperature": 1.0,
+  "id_retention_target": 0.95,
+  "shrinkage": 0.01,
+  "thresholds": {
+    "energy": -3.389189801547198,
+    "maha": 458.85996651652755,
+    "msp": 0.5487531981272907
+  },
+  "measured_id_retention": {
+    "val": 0.95,
+    "test": 0.925
+  },
+  "synthetic_far_ood_flag_rate": 1.0,
+  "auroc_vs_synthetic_far_ood": {
+    "energy": 0.5391,
+    "mahalanobis": 1.0
+  },
+  "n_train_features": 1200,
+  "n_val_features": 600
+}
