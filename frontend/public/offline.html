@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Offline — LungVision AI</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #0b2545;
+        color: #e2e8f0;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        text-align: center;
+        padding: 24px;
+      }
+      .box {
+        max-width: 22rem;
+      }
+      img {
+        width: 72px;
+        height: 72px;
+        border-radius: 18px;
+      }
+      h1 {
+        font-size: 1.25rem;
+        margin: 18px 0 8px;
+      }
+      p {
+        margin: 0 0 20px;
+        line-height: 1.6;
+        color: #94a3b8;
+        font-size: 0.95rem;
+      }
+      button {
+        border: 0;
+        border-radius: 12px;
+        padding: 12px 26px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #fff;
+        background: linear-gradient(135deg, #1a94bf, #0b2545);
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <img src="/icons/icon-192.png" alt="LungVision AI" />
+      <h1>You are offline</h1>
+      <p>
+        LungVision AI needs a connection to analyse X-rays and load your scan history. Reconnect and
+        try again.
+      </p>
+      <button onclick="location.reload()">Retry</button>
+    </div>
+  </body>
+</html>
