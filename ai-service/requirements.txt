@@ -1,0 +1,8 @@
+# Pinned to the TensorFlow version the models were trained/saved with (Keras 3 .keras format).
+# numpy/protobuf are intentionally left unpinned so TensorFlow selects compatible versions.
+tensorflow==2.21.0
+fastapi
+uvicorn[standard]
+python-multipart
+pillow
+opencv-python-headless
