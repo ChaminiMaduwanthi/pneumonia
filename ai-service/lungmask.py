@@ -99,9 +99,15 @@ def lung_mask(image_rgb: np.ndarray) -> np.ndarray | None:
     if mask.sum() < 0.03 * _WORK * _WORK:
         return None
 
-    # Soften the boundary so the overlay does not get a hard, fake-looking edge.
-    mask = cv2.dilate(mask, np.ones((9, 9), np.uint8))
-    mask = cv2.GaussianBlur(mask, (31, 31), 0)
-    mask = np.clip(mask, 0.0, 1.0)
+    # Soften the boundary so the overlay does not get a hard, fake-looking edge,
+    # WITHOUT letting the field grow. The previous dilate(9) + blur(31) pushed the
+    # mask up to 15 px past the lung estimate at this working resolution, roughly
+    # 6 per cent of the image on every side, so the "restricted" map still fell on
+    # the neck, the shoulders and below the diaphragm. Blurring the binary mask on
+    # its own leaves the half contour exactly on the estimated boundary; rescaling
+    # about that contour then cuts the remaining tail, giving a transition about
+    # three pixels wide and nothing at all beyond it.
+    mask = cv2.GaussianBlur(mask, (9, 9), 2.0)
+    mask = np.clip((mask - 0.25) / 0.5, 0.0, 1.0)
 
     return cv2.resize(mask, (w0, h0), interpolation=cv2.INTER_LINEAR)
