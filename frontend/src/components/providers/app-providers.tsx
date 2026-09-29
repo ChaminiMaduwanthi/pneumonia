@@ -11,7 +11,7 @@ type Props = {
 export function AppProviders({ children }: Props) {
   return (
     <SessionProvider>
-      <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
         {children}
         <Toaster richColors />
       </ThemeProvider>
