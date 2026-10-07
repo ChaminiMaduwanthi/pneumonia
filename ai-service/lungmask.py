@@ -8,19 +8,105 @@ Explanation of COVID-19 in Chest X-ray Images*, Sensors 21(21):7116, 2021 — mo
 that see the whole radiograph frequently attend to shoulders, borders and burnt-in
 markers instead of lung tissue.
 
-The estimator is deliberately conservative: it finds the patient's body, then the
-air-filled (dark) fields inside it. If it cannot find a plausible pair of lung
-fields it returns None, and callers fall back to the unmasked map rather than
-showing a wrong mask.
+The primary estimator is a pretrained lung segmentation U-Net (imlab-uiip,
+lung-segmentation-2d, MIT licence, trained on the JSRT and Montgomery sets; weights in
+lung_seg/). The classical thresholding estimator below it leaked onto the shoulders,
+the neck and the image corners whenever the radiograph was cropped tightly to the
+chest, so it is kept only as a fallback for a deployment without the weights file.
+If no plausible lung field is found, None is returned and the caller shows no heatmap
+at all, so heat is never drawn outside the lungs.
 """
 
 from __future__ import annotations
+
+import os
+import threading
 
 import cv2
 import numpy as np
 
 # Working resolution for the mask search — small is enough and keeps it fast.
 _WORK = 256
+
+_UNET_WEIGHTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lung_seg", "trained_model.hdf5")
+_unet = None
+_unet_lock = threading.Lock()
+
+
+def _build_unet():
+    """Keras 3 rebuild of the original Keras 2 U-Net, loading its weights layer by layer."""
+    import h5py
+    import keras
+    from keras import layers
+
+    conv = lambda f: layers.Conv2D(f, 3, padding="same", activation="relu")
+    inp = keras.Input((256, 256, 1))
+    c1 = conv(32)(conv(32)(inp))
+    c2 = conv(64)(conv(64)(layers.MaxPooling2D()(c1)))
+    c3 = conv(64)(conv(64)(layers.MaxPooling2D()(c2)))
+    c4 = conv(128)(conv(128)(layers.MaxPooling2D()(c3)))
+    x = conv(256)(layers.MaxPooling2D()(c4))
+    for skip, f in ((c4, 256), (c3, 256), (c2, 128), (c1, 64)):
+        x = conv(f)(conv(f)(layers.UpSampling2D()(x)))
+        x = conv(f)(layers.concatenate([skip, x]))
+    out = layers.Conv2D(1, 3, padding="same", activation="sigmoid")(x)
+    model = keras.Model(inp, out)
+
+    convs = [l for l in model.layers if isinstance(l, layers.Conv2D)]
+    with h5py.File(_UNET_WEIGHTS, "r") as f:
+        g = f["model_weights"]
+        for i, layer in enumerate(convs, start=1):
+            w = g[f"conv2d_{i}"][f"conv2d_{i}"]
+            layer.set_weights([w["kernel:0"][()], w["bias:0"][()]])
+    return model
+
+
+def _unet_lung_mask(gray_full: np.ndarray) -> np.ndarray | None:
+    global _unet
+    if _unet is None:
+        with _unet_lock:
+            if _unet is None:
+                _unet = _build_unet()
+    h0, w0 = gray_full.shape[:2]
+
+    # Preprocessing as in training: resize, histogram equalisation, standardisation.
+    g = cv2.equalizeHist(cv2.resize(gray_full, (_WORK, _WORK), interpolation=cv2.INTER_AREA))
+    g = g.astype(np.float32)
+    g = (g - g.mean()) / (g.std() + 1e-6)
+    prob = _unet(g[None, ..., None], training=False).numpy()[0, ..., 0]
+
+    # Keep at most the two largest plausible lung regions: drop specks and anything
+    # centred below the diaphragm (bowel gas is dark and air filled too).
+    n, labels, stats, cents = cv2.connectedComponentsWithStats((prob > 0.5).astype(np.uint8), 8)
+    regions = [(stats[i, cv2.CC_STAT_AREA], i) for i in range(1, n)
+               if stats[i, cv2.CC_STAT_AREA] >= 0.01 * _WORK * _WORK and cents[i][1] / _WORK <= 0.80]
+    if not regions:
+        return None
+    regions.sort(reverse=True)
+    mask = np.isin(labels, [i for _, i in regions[:2]]).astype(np.uint8)
+    if mask.sum() < 0.04 * _WORK * _WORK:
+        return None
+
+    # Fill holes (a dense opacity can leave a gap inside a lung), then soften the edge
+    # without letting the field grow, exactly as the classical estimator does.
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cv2.drawContours(mask, contours, -1, 1, thickness=cv2.FILLED)
+    m = cv2.GaussianBlur(mask.astype(np.float32), (9, 9), 2.0)
+    m = np.clip((m - 0.25) / 0.5, 0.0, 1.0)
+    return cv2.resize(m, (w0, h0), interpolation=cv2.INTER_LINEAR)
+
+
+def lung_mask(image_rgb: np.ndarray) -> np.ndarray | None:
+    """
+    Estimate the lung fields of a chest radiograph.
+
+    `image_rgb` is an HxWx3 uint8 array. Returns a float32 mask in [0, 1] at the same
+    HxW, or None when no plausible lung field is found (non-CXR input, bad exposure).
+    """
+    if not os.path.exists(_UNET_WEIGHTS):
+        return _classical_lung_mask(image_rgb)
+    gray = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2GRAY) if image_rgb.ndim == 3 else image_rgb
+    return _unet_lung_mask(gray)
 
 
 def _body_mask(gray: np.ndarray) -> np.ndarray:
@@ -42,9 +128,10 @@ def _body_mask(gray: np.ndarray) -> np.ndarray:
     return filled
 
 
-def lung_mask(image_rgb: np.ndarray) -> np.ndarray | None:
+def _classical_lung_mask(image_rgb: np.ndarray) -> np.ndarray | None:
     """
-    Estimate the lung fields of a chest radiograph.
+    Classical fallback estimate of the lung fields of a chest radiograph, used only
+    when the U-Net weights in lung_seg/ are not available.
 
     `image_rgb` is an HxWx3 uint8 array. Returns a float32 mask in [0, 1] at the same
     HxW, or None when no plausible lung field is found (non-CXR input, bad exposure).

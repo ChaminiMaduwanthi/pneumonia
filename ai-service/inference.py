@@ -173,12 +173,14 @@ def _restrict_to_lungs(original: Image.Image, heatmap: np.ndarray) -> tuple[np.n
     returned alongside and reported to the user rather than quietly discarded.
 
     Returns (heatmap, lung_focus). `lung_focus` is None when no lung field could be
-    found (non-radiograph input), in which case the map is left untouched.
+    found (non-radiograph input), in which case an empty map is returned so that no
+    heat is ever drawn outside the lungs.
     """
     base = np.asarray(original.convert("RGB"))
     mask = lungmask.lung_mask(base)
     if mask is None:
-        return heatmap, None
+        # No lung field found: show no heat at all rather than heat over the whole image.
+        return np.zeros_like(heatmap), None
 
     # Upsample the coarse 7x7 CAM first, then mask — masking at feature resolution
     # would quantise the lung boundary to ~32-pixel blocks.
@@ -190,8 +192,8 @@ def _restrict_to_lungs(original: Image.Image, heatmap: np.ndarray) -> tuple[np.n
     masked = full * mask
     peak = float(masked.max())
     if peak <= 0:
-        # Nothing survived inside the lungs; keep the original rather than a blank map.
-        return full, lung_focus
+        # Nothing inside the lungs: show no heat rather than heat outside them.
+        return np.zeros_like(full), lung_focus
     return masked / peak, lung_focus
 
 

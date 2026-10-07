@@ -106,8 +106,8 @@ async def predict(
         )
     elif lung_focus is None:
         explanation = (
-            f"The highlighted regions show the areas most influential to the "
-            f"{result['predicted_class']} prediction ({confidence}% confidence)."
+            f"{result['predicted_class']} prediction ({confidence}% confidence). "
+            f"No lung field could be detected in this image, so no heatmap is shown."
         )
     else:
         explanation = (
